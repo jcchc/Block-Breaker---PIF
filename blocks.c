@@ -28,21 +28,27 @@ Bloco* gerarBlocos(int level) {
 }
 
 void destruirLista(Bloco *head) {
-    Bloco *temp;
-    while (head != NULL) {
-        temp = head; 
-        head = head->prox;
-        free(temp);
+Bloco *atual = head;
+    Bloco *proximo;
+
+    while (atual != NULL) {
+        proximo = atual->prox; // Guarda o endereço do próximo antes de destruir o atual
+        free(atual);           // Devolve o "quarto" (memória) para o sistema
+        atual = proximo;       // Avança para o próximo
     }
 }
 
 bool todosBlocosDestruidos(Bloco *head) {
     Bloco *atual = head;
+    
     while (atual != NULL) {
-        if (atual->ativo) {
-            return false;
+        // Se encontrar APENAS UM bloco que ainda esteja ativo (vivo)...
+        if (atual->ativo == true) {
+            return false; // ...então o nível NÃO acabou.
         }
-        atual = atual->prox;
+        atual = atual->prox; // Continua procurando
     }
-    return true;
+    
+    // Se passou por todos e não retornou false, é porque todos morreram.
+    return true; 
 }
