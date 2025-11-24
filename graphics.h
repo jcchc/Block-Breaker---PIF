@@ -1,14 +1,18 @@
-#ifndef GRAPHICS_H_
-#define GRAPHICS_H_
+#ifndef GRAPHICS_H
+#define GRAPHICS_H
 
-// Define as telas do jogo (para a máquina de estados)
-typedef enum GameScreen {
-    MENU,
-    GAMEPLAY,
-    RANKINGS,
-    GAME_OVER
-} GameScreen;
+#include "raylib.h" // <--- ADICIONE ESTA LINHA (Resolve o erro de Vector2 e Color)
 
-void RunGame(void);
+// Inicializa fontes, texturas e sistemas de partículas
+void InitGraphics(void);
 
-#endif 
+// Descarrega da memória ao fechar o jogo
+void UnloadGraphics(void);
+
+// Função principal que desenha o quadro atual
+void DrawGameFrame(void);
+
+// Função para criar explosão
+void SpawnExplosion(Vector2 pos, Color color);
+
+#endif

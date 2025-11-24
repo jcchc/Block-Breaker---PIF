@@ -1,323 +1,227 @@
 #include "raylib.h"
-#include "graphics.h"   // Header principal
-#include "blocks.h"     // Header REAL 
-#include "player_fake.h"
-#include "ball_fake.h"
-#include <stdlib.h>     // Para GetRandomValue
+#include "graphics.h"
+#include "game_logic.h" // Para enxergar Player, Ball, GameScreen
+#include "blocks.h"     // Para enxergar Bloco
+#include <stdio.h>      // Para TextFormat
 
-const int screenWidth = 900;
-const int screenHeight = 650;
+// --- CONFIGURAÇÕES VISUAIS ---
+const Color CORES_NIVEIS[] = {
+    { 65, 105, 225, 255 },  // Round 1: Azul Royal
+    { 50, 205, 50, 255 },   // Round 2: Verde Lima
+    { 255, 165, 0, 255 },   // Round 3: Laranja
+    { 148, 0, 211, 255 },   // Round 4: Roxo Escuro
+    { 220, 20, 60, 255 }    // Round 5+: Vermelho Carmesim
+};
 
-// --- Blocos do Menu ---
-#define BLOCK_COUNT 20 // Quantidade de blocos no fundo
+const Color COR_FUNDO      = { 20, 20, 30, 255 };
+const Color COR_BOLA       = { 245, 245, 245, 255 };
+const Color COR_JOGADOR    = { 200, 200, 200, 255 };
+const Color COR_BOTAO      = { 40, 40, 80, 255 };
+const Color COR_DESTAQUE   = { 255, 215, 0, 255 };
+
+// --- SISTEMA DE PARTÍCULAS (Visual) ---
+#define MAX_PARTICLES 100
 typedef struct {
-    Rectangle rect;
+    Vector2 pos;
+    Vector2 vel;
     Color color;
-    float speed;
-} FallingBlock;
+    float alpha;
+    float size;
+    bool active;
+} Particle;
 
-// --- Variáveis Globais (static) ---
-static GameScreen currentState; // Tela atual do jogo
-static bool shouldClose = false; // Avisa quando o usuário quer sair
-static int selectedOption = 0;   // 0=Iniciar, 1=Rankings, 2=Sair
-static Font mainFont;            // Fonte customizada
+static Particle particles[MAX_PARTICLES];
 
-// Variáveis do Jogo
-static Player player;
-static Ball ball;
-static Bloco* blockList;
-static int score;
-
-// Coisas do Menu
+// --- FUNDO ANIMADO DO MENU ---
+#define BLOCK_COUNT 25 
+typedef struct { Rectangle rect; Color color; float speed; } FallingBlock;
 static FallingBlock fallingBlocks[BLOCK_COUNT];
-static int fakeRankings[5] = {1200, 950, 700, 400, 100}; // Ranking FAKE (será substituído)
 
-// --- Protótipos das Funções (só desse arquivo) ---
-static void InitGame(void);
-static void UpdateMenu(void);
-static void DrawMenu(void);
-static void UpdateGameplay(void);
-static void DrawGameplay(void);
-static void UpdateRankings(void);
-static void DrawRankings(void);
-static void UpdateGameOver(void);
-static void DrawGameOver(void);
-static void InitMenuBlocks(void);
-static void UpdateMenuBlocks(float dt);
-static void DrawMenuBlocks(void);
-static void DrawTextBordered(Font font, const char *text, int x, int y, int fontSize, Color color, Color borderColor);
+static Font mainFont;
 
-/**
- * Função principal que RODA O JOGO
- * Contém o loop principal e a máquina de estados.
- */
-void RunGame(void) {
-    InitWindow(screenWidth, screenHeight, "Block Breaker (Pessoa 2)");
-    
-    // Diz para a Raylib não fechar o jogo com o ESC.
-    SetExitKey(KEY_NULL); 
-    
-    // AVISO: É preciso ter um arquivo "font.ttf" na pasta
-    if (FileExists("font.ttf")) mainFont = LoadFont("font.ttf");
-    else mainFont = GetFontDefault();
-    
-    SetTargetFPS(60);
-    InitGame(); // Prepara tudo
+// --- IMPORTANTE: Variáveis Externas ---
+// Estamos dizendo: "Essas variáveis existem no game_logic.c, vou só ler."
+extern Player player;
+extern Ball ball;
+extern Bloco *listaBlocos; // A SUA lista de blocos!
+extern int pontuacao;
+extern int nivel;
+extern int vidas; // Assumindo que player.vidas ou variável global vidas existe
+extern GameScreen currentState; // MENU, GAMEPLAY, etc.
+extern int fakeRankings[5]; // Se quiser manter o ranking fake
 
-    // Loop Principal do Jogo
-    while (!WindowShouldClose() && !shouldClose) {
-        
-        // --- ATUALIZAÇÃO (Lógica) ---
-        // Roda a lógica da tela atual
-        switch(currentState) {
-            case MENU:      UpdateMenu();       break;
-            case GAMEPLAY:  UpdateGameplay();   break;
-            case RANKINGS:  UpdateRankings();   break;
-            case GAME_OVER: UpdateGameOver();   break;
-        }
+// ---------------------------------------------------------
+//               FUNÇÕES INTERNAS (Auxiliares)
+// ---------------------------------------------------------
 
-        // --- DESENHO (Gráficos) ---
-        // Desenha a tela atual
-        BeginDrawing();
-        ClearBackground(BLACK);
-        
-        switch(currentState) {
-            case MENU:      DrawMenu();         break;
-            case GAMEPLAY:  DrawGameplay();     break;
-            case RANKINGS:  DrawRankings();     break;
-            case GAME_OVER: DrawGameOver();     break;
-        }
-        EndDrawing();
+static void InitMenuBlocks(void) {
+    for (int i = 0; i < BLOCK_COUNT; i++) {
+        fallingBlocks[i].rect = (Rectangle){ GetRandomValue(0, 900), GetRandomValue(-600, 0), 40, 40 };
+        fallingBlocks[i].speed = GetRandomValue(2, 5);
+        fallingBlocks[i].color = (Color){ GetRandomValue(50, 150), GetRandomValue(50, 150), 255, 50 };
     }
-
-    // --- Limpeza (antes de fechar) ---
-    destruirLista(blockList); // Função REAL da Pessoa 3
-    UnloadFont(mainFont);     // Libera a fonte da memória
-    CloseWindow();
 }
 
-/**
- * Prepara ou Reinicia o jogo.
- */
-static void InitGame(void) {
-    // Cria jogador e bola (usando headers fake)
-    player = CreatePlayer(screenWidth / 2, screenHeight - 40, 100, 20);
-    ball = CreateBall(screenWidth / 2, screenHeight / 2, 10);
-    
-    // Limpa a lista antiga (se existir) e cria a nova
-    if (blockList != NULL) destruirLista(blockList); // Função REAL da Pessoa 3
-    blockList = gerarBlocos(1);                      // Função REAL da Pessoa 3
-    
-    // Prepara o menu
-    InitMenuBlocks();
-    score = 0;
-    selectedOption = 0;
-    currentState = MENU; // Sempre começa no menu
-}
-
-/**
- * Desenha texto com borda preta
- */
-static void DrawTextBordered(Font font, const char *text, int x, int y, int fontSize, Color color, Color borderColor) {
-    // Desenha a "sombra" (borda)
-    DrawTextEx(font, text, (Vector2){x-2, y-2}, fontSize, 2, borderColor);
-    DrawTextEx(font, text, (Vector2){x+2, y-2}, fontSize, 2, borderColor);
-    DrawTextEx(font, text, (Vector2){x-2, y+2}, fontSize, 2, borderColor);
-    DrawTextEx(font, text, (Vector2){x+2, y+2}, fontSize, 2, borderColor);
-    
-    // Desenha o texto principal
-    DrawTextEx(font, text, (Vector2){x, y}, fontSize, 2, color);
-}
-
-// --- Funções da Tela de MENU ---
-
-static void UpdateMenu(void) {
-    UpdateMenuBlocks(GetFrameTime()); // Atualiza o fundo animado
-
-    // Controla a seleção dos botões
-    if (IsKeyPressed(KEY_DOWN)) {
-        selectedOption++;
-        if (selectedOption > 2) selectedOption = 0; // 3 opções (0, 1, 2)
-    }
-    if (IsKeyPressed(KEY_UP)) {
-        selectedOption--;
-        if (selectedOption < 0) selectedOption = 2;
-    }
-
-    // Checa se o Enter foi pressionado
-    if (IsKeyPressed(KEY_ENTER)) {
-        switch(selectedOption) {
-            case 0: currentState = GAMEPLAY;    break; // Vai para o Jogo
-            case 1: currentState = RANKINGS;    break; // Vai para o Ranking
-            case 2: shouldClose = true;         break; // Fecha o Jogo
+// Atualiza apenas a animação do fundo (isso não é lógica de jogo, é efeito visual)
+static void UpdateMenuBlocks(void) {
+    for (int i = 0; i < BLOCK_COUNT; i++) {
+        fallingBlocks[i].rect.y += fallingBlocks[i].speed;
+        if (fallingBlocks[i].rect.y > 650) {
+            fallingBlocks[i].rect.y = -50;
+            fallingBlocks[i].rect.x = GetRandomValue(0, 900);
         }
     }
 }
+
+static void DrawMenuBlocks(void) {
+    for (int i = 0; i < BLOCK_COUNT; i++) { 
+        DrawRectangleRec(fallingBlocks[i].rect, fallingBlocks[i].color); 
+    }
+}
+
+static void DrawTextCentered(const char *text, int y, int fontSize, Color color) {
+    int textWidth = MeasureTextEx(mainFont, text, fontSize, 2).x;
+    int x = (900 - textWidth) / 2;
+    DrawTextEx(mainFont, text, (Vector2){x + 2, y + 2}, fontSize, 2, BLACK); // Sombra
+    DrawTextEx(mainFont, text, (Vector2){x, y}, fontSize, 2, color);
+}
+
+static void DrawButton(const char *text, int y, bool isSelected) {
+    // Desenha botões do menu
+    Rectangle btnRect = { (900 - 300) / 2, y, 300, 50 };
+    Color corBorda = isSelected ? COR_DESTAQUE : DARKGRAY;
+    Color corTexto = isSelected ? COR_DESTAQUE : WHITE;
+    DrawRectangleRec(btnRect, COR_BOTAO);
+    DrawRectangleLinesEx(btnRect, 3, corBorda);
+    int textW = MeasureTextEx(mainFont, text, 30, 2).x;
+    DrawTextEx(mainFont, text, (Vector2){ btnRect.x + (300 - textW)/2, y + 10 }, 30, 2, corTexto);
+}
+
+// Atualiza e desenha partículas
+static void UpdateDrawParticles(void) {
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        if (particles[i].active) {
+            particles[i].pos.x += particles[i].vel.x;
+            particles[i].pos.y += particles[i].vel.y;
+            particles[i].alpha -= 0.02f;
+            if (particles[i].alpha <= 0) particles[i].active = false;
+
+            Color finalColor = particles[i].color;
+            finalColor.a = (unsigned char)(particles[i].alpha * 255);
+            DrawRectangle(particles[i].pos.x, particles[i].pos.y, particles[i].size, particles[i].size, finalColor);
+        }
+    }
+}
+
+// ---------------------------------------------------------
+//               FUNÇÕES DE DESENHO DE ESTADO
+// ---------------------------------------------------------
 
 static void DrawMenu(void) {
-    DrawMenuBlocks(); // Desenha o fundo animado
+    UpdateMenuBlocks(); // Anima o fundo
+    DrawMenuBlocks();
     
-    // Título
-    const char *titulo = "BLOCK BREAKER"; 
-    int xTitulo = (screenWidth - MeasureTextEx(mainFont, titulo, 60, 2).x) / 2; // Centraliza
-    DrawTextBordered(mainFont, titulo, xTitulo, 100, 60, WHITE, BLACK);
-
-    // Define os retângulos dos botões
-    Rectangle btnStart    = { (float)screenWidth/2 - 150, 250, 300, 50 };
-    Rectangle btnRankings = { (float)screenWidth/2 - 150, 320, 300, 50 };
-    Rectangle btnQuit     = { (float)screenWidth/2 - 150, 390, 300, 50 };
+    DrawTextCentered("BLOCK BREAKER", 100, 80, COR_DESTAQUE);
     
-    // Desenha os fundos dos botões
-    DrawRectangleRec(btnStart, (Color){0, 121, 241, 200});    // Azul
-    DrawRectangleRec(btnRankings, (Color){0, 200, 121, 200}); // Verde
-    DrawRectangleRec(btnQuit, (Color){255, 109, 109, 200});   // Vermelho
-
-    // Desenha o destaque amarelo
-    if (selectedOption == 0) DrawRectangleLinesEx(btnStart, 4, YELLOW);
-    if (selectedOption == 1) DrawRectangleLinesEx(btnRankings, 4, YELLOW);
-    if (selectedOption == 2) DrawRectangleLinesEx(btnQuit, 4, YELLOW);
-
-    // Desenha os textos dos botões
-    DrawTextBordered(mainFont, "Start Game", btnStart.x + 65, btnStart.y + 10, 30, WHITE, BLACK);
-    DrawTextBordered(mainFont, "Rankings", btnRankings.x + 80, btnRankings.y + 10, 30, WHITE, BLACK);
-    DrawTextBordered(mainFont, "Quit", btnQuit.x + 110, btnQuit.y + 10, 30, WHITE, BLACK);
-}
-
-// --- Funções da Tela de RANKINGS ---
-
-static void UpdateRankings(void) {
-    if (IsKeyPressed(KEY_ESCAPE)) currentState = MENU; 
-}
-
-static void DrawRankings(void) {
-    DrawMenuBlocks(); // Reusa o fundo animado
-    
-    // Título
-    const char *titulo = "RANKINGS"; 
-    int xTitulo = (screenWidth - MeasureTextEx(mainFont, titulo, 50, 2).x) / 2;
-    DrawTextBordered(mainFont, titulo, xTitulo, 80, 50, YELLOW, BLACK);
-    
-    // Mostra os scores FAKE (será substituído)
-    DrawTextBordered(mainFont, TextFormat("1. %d", fakeRankings[0]), 350, 200, 30, WHITE, BLACK);
-    DrawTextBordered(mainFont, TextFormat("2. %d", fakeRankings[1]), 350, 240, 30, WHITE, BLACK);
-    DrawTextBordered(mainFont, TextFormat("3. %d", fakeRankings[2]), 350, 280, 30, WHITE, BLACK);
-    DrawTextBordered(mainFont, TextFormat("4. %d", fakeRankings[3]), 350, 320, 30, WHITE, BLACK);
-    DrawTextBordered(mainFont, TextFormat("5. %d", fakeRankings[4]), 350, 360, 30, WHITE, BLACK);
-    
-    // Instrução
-    DrawTextBordered(mainFont, "Press ESC to go back", 260, 550, 25, GRAY, BLACK);
-}
-
-
-// --- Funções da Tela de GAMEPLAY ---
-
-static void UpdateGameplay(void) {
-    // ------------------------------------------------------------------
-    // ATENÇÃO: LÓGICA FAKE (Pessoa 1 precisa fazer o real)
-    // ------------------------------------------------------------------
-    
-    // Mover jogador (fake)
-    if (IsKeyDown(KEY_LEFT)) player.rect.x -= player.velocidade;
-    if (IsKeyDown(KEY_RIGHT)) player.rect.x += player.velocidade;
-
-    // Mover bola (fake)
-    ball.posicao.x += ball.velocidade.x;
-    ball.posicao.y += ball.velocidade.y;
-    
-    // Colisão com paredes (fake)
-    if (ball.posicao.x <= 0 || ball.posicao.x >= screenWidth) ball.velocidade.x *= -1;
-    if (ball.posicao.y <= 0) ball.velocidade.y *= -1;
-    
-    // Colisão com jogador (fake)
-    if (CheckCollisionCircleRec(ball.posicao, ball.raio, player.rect)) ball.velocidade.y *= -1;
-    
-    // Colisão com blocos (usando a lista REAL da Pessoa 3)
-    Bloco* atual = blockList;
-    while (atual != NULL) {
-        if (atual->ativo && CheckCollisionCircleRec(ball.posicao, ball.raio, atual->rect)) {
-            ball.velocidade.y *= -1;
-            atual->ativo = false;    
-            score += 10;
-            break; // Sai do loop para evitar bugs
-        }
-        atual = atual->prox;
-    }
-    
-    // Game Over (fake)
-    if (ball.posicao.y > screenHeight) {
-        player.vidas--;
-        if (player.vidas <= 0) currentState = GAME_OVER;
-        else ball = CreateBall(screenWidth / 2, screenHeight / 2, 10);
-    }
-    
-    // Atalho para voltar ao menu
-    if (IsKeyPressed(KEY_ESCAPE)) currentState = MENU;
+    // Instruções simples (já que a lógica de seleção está no game_logic)
+    DrawTextCentered("Pressione ENTER para Jogar", 300, 30, WHITE);
+    DrawTextCentered("Pressione R para Ranking", 350, 20, GRAY);
+    DrawTextCentered("Pressione ESC para Sair", 400, 20, GRAY);
 }
 
 static void DrawGameplay(void) {
-    // Desenho da tela de jogo
+    // 1. Desenha Player
+    DrawRectangleRec(player.rect, COR_JOGADOR);
     
-    DrawRectangleRec(player.rect, BLUE);
-    DrawCircleV(ball.posicao, ball.raio, WHITE);
+    // 2. Desenha Bola
+    DrawCircleV(ball.posicao, ball.raio, COR_BOLA);
+
+    // 3. Desenha Blocos (DA SUA LISTA!)
+    Color corDoNivel = CORES_NIVEIS[(nivel - 1) % 5];
     
-    // Desenha os blocos (lendo a lista REAL da Pessoa 3)
-    Bloco* atual = blockList;
+    Bloco *atual = listaBlocos;
     while (atual != NULL) {
-        if (atual->ativo) DrawRectangleRec(atual->rect, MAROON); 
+        if (atual->ativo) {
+            // Usa a cor do nível ou uma cor especial baseada no tipo do bloco
+            Color corBloco = corDoNivel;
+            if (atual->tipo > 0) {
+                 // Se quiser variar a cor por linha (tipo 1, 2, 3...)
+                 // corBloco = CORES_NIVEIS[(atual->tipo) % 5];
+            }
+            
+            DrawRectangleRec(atual->rect, corBloco);
+            DrawRectangleLinesEx(atual->rect, 2, BLACK); 
+        }
         atual = atual->prox;
     }
-    
-    // Desenha o HUD
-    DrawTextBordered(mainFont, TextFormat("Score: %d", score), 20, 10, 25, WHITE, BLACK);
-    DrawTextBordered(mainFont, TextFormat("Lives: %d", player.vidas), screenWidth - 120, 10, 25, WHITE, BLACK);
+
+    // 4. Partículas
+    UpdateDrawParticles();
+
+    // 5. HUD
+    DrawText(TextFormat("SCORE: %d", pontuacao), 20, 20, 20, COR_DESTAQUE);
+    DrawText(TextFormat("LEVEL: %d", nivel), 450 - 40, 20, 20, WHITE);
+    // Acessando vidas (assumindo que está na struct player ou global)
+    DrawText(TextFormat("LIVES: %d", player.vidas), 900 - 120, 20, 20, RED);
 }
 
-// --- Funções da Tela de GAME OVER ---
-
-static void UpdateGameOver(void) {
-    if (IsKeyPressed(KEY_R)) {
-        InitGame(); // Reinicia o jogo
-        currentState = MENU; // Volta para o menu
+static void DrawRankings(void) {
+    DrawMenuBlocks(); // Fundo
+    DrawTextCentered("TOP SCORES", 80, 60, COR_DESTAQUE);
+    // Desenha o ranking fake (extern)
+    for (int i = 0; i < 5; i++) {
+        DrawTextCentered(TextFormat("%d.  %05d", i + 1, fakeRankings[i]), 200 + (i * 50), 40, WHITE);
     }
-    // Também permite voltar com ESC, por consistência
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        InitGame(); 
-        currentState = MENU;
-    }
+    DrawTextCentered("Pressione ESC para voltar", 550, 20, GRAY);
 }
+
 static void DrawGameOver(void) {
-    DrawGameplay(); // Desenha o jogo "congelado"
+    DrawGameplay(); // Fundo do jogo congelado
+    DrawRectangle(0, 0, 900, 650, (Color){0, 0, 0, 150}); // Escurece
     
-    // Centraliza as mensagens
-    DrawTextBordered(mainFont, "GAME OVER", (screenWidth - MeasureTextEx(mainFont, "GAME OVER", 60, 2).x)/2, 200, 60, RED, BLACK); 
-    DrawTextBordered(mainFont, "Press 'R' to return to Menu", (screenWidth - MeasureTextEx(mainFont, "Press 'R' to return to Menu", 25, 2).x)/2, 280, 25, WHITE, BLACK);
+    DrawTextCentered("GAME OVER", 200, 80, RED);
+    DrawTextCentered(TextFormat("Final Score: %d", pontuacao), 300, 40, WHITE);
+    DrawTextCentered("Pressione [R] para Reiniciar", 450, 20, GRAY);
 }
 
-// --- Funções do Fundo Animado do Menu ---
+// ---------------------------------------------------------
+//               FUNÇÕES PÚBLICAS (API)
+// ---------------------------------------------------------
 
-static void InitMenuBlocks() {
-    Color cols[5] = { RED, ORANGE, YELLOW, GREEN, BLUE };
-    for (int i = 0; i < BLOCK_COUNT; i++) {
-        fallingBlocks[i].rect.width = 60;
-        fallingBlocks[i].rect.height = 20;
-        fallingBlocks[i].rect.x = GetRandomValue(0, screenWidth - 60);
-        fallingBlocks[i].rect.y = GetRandomValue(-600, 0);
-        fallingBlocks[i].color = cols[i % 5];
-        fallingBlocks[i].speed = 50 + GetRandomValue(0, 50); 
-    }
+void InitGraphics(void) {
+    if (FileExists("font.ttf")) mainFont = LoadFont("font.ttf");
+    else mainFont = GetFontDefault();
+    
+    for(int i=0; i<MAX_PARTICLES; i++) particles[i].active = false;
+    InitMenuBlocks();
 }
-static void UpdateMenuBlocks(float dt) {
-    for (int i = 0; i < BLOCK_COUNT; i++) {
-        fallingBlocks[i].rect.y += fallingBlocks[i].speed * dt;
-        // Reposiciona o bloco quando ele sai da tela
-        if (fallingBlocks[i].rect.y > screenHeight) {
-            fallingBlocks[i].rect.y = GetRandomValue(-500, 0);
-            fallingBlocks[i].rect.x = GetRandomValue(0, screenWidth - 60);
+
+void UnloadGraphics(void) {
+    UnloadFont(mainFont);
+}
+
+void SpawnExplosion(Vector2 pos, Color color) {
+    int count = 0;
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        if (!particles[i].active) {
+            particles[i].active = true;
+            particles[i].pos = pos;
+            particles[i].vel.x = (float)GetRandomValue(-50, 50) / 10.0f;
+            particles[i].vel.y = (float)GetRandomValue(-50, 50) / 10.0f;
+            particles[i].color = color;
+            particles[i].alpha = 1.0f;
+            particles[i].size = (float)GetRandomValue(3, 6);
+            count++;
+            if (count >= 8) break;
         }
     }
 }
-static void DrawMenuBlocks() {
-    for (int i = 0; i < BLOCK_COUNT; i++) {
-        DrawRectangleRec(fallingBlocks[i].rect, fallingBlocks[i].color);
+
+void DrawGameFrame(void) {
+    switch(currentState) {
+        case MENU:      DrawMenu();     break;
+        case GAMEPLAY:  DrawGameplay(); break;
+        case RANKINGS:  DrawRankings(); break;
+        case GAME_OVER: DrawGameOver(); break;
     }
 }

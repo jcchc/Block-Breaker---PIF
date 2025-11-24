@@ -1,104 +1,133 @@
 #include "game_logic.h"
 #include <stdlib.h> // Para NULL
 
-// Definição das variáveis globais
+// =========================================================
+// 1. DEFINIÇÃO DAS VARIÁVEIS GLOBAIS
+// (Aqui elas nascem de verdade. Sem 'static', sem 'extern')
+// =========================================================
+Player player;
+Ball ball;
+Bloco *listaBlocos = NULL;
+
 int pontuacao = 0;
 int nivel = 1;
+int vidas = 3;
+GameScreen currentState = MENU;
+int fakeRankings[5] = {1200, 950, 700, 400, 100};
 bool jogoFinalizado = false;
 
-// Constantes locais (para saber onde bater)
-const int LARGURA_TELA = 800;
-const int ALTURA_TELA = 600;
+// Constantes locais
+const int LARGURA_TELA = 900;
+const int ALTURA_TELA = 650;
 
-void IniciarJogo(Player *player, Ball *ball, Bloco **listaBlocos) {
-    // Reseta o Player
-    player->rect = (Rectangle){ LARGURA_TELA/2 - 50, ALTURA_TELA - 40, 100, 20 };
-    player->velocidade = 7.0f;
-    player->vidas = 3;
+// =========================================================
+// 2. FUNÇÕES DE LÓGICA
+// =========================================================
 
-    // Reseta a Bola
-    ball->posicao = (Vector2){ LARGURA_TELA/2, ALTURA_TELA/2 };
-    ball->velocidade = (Vector2){ 4.0f, -4.0f };
-    ball->raio = 8.0f;
-    ball->ativa = true;
+void IniciarJogo(Player *p, Ball *b, Bloco **l) {
+    // Configura o Player (Raquete)
+    p->rect = (Rectangle){ LARGURA_TELA/2 - 50, ALTURA_TELA - 40, 100, 20 };
+    p->velocidade = 7.0f;
+    p->vidas = 3; // Reseta vidas
 
-    // Reseta o Jogo
+    // Configura a Bola
+    b->posicao = (Vector2){ LARGURA_TELA/2, ALTURA_TELA/2 };
+    b->velocidade = (Vector2){ 4.0f, -4.0f };
+    b->raio = 8.0f;
+    b->ativa = true;
+
+    // Reseta Globais
     pontuacao = 0;
     nivel = 1;
+    vidas = 3;
     jogoFinalizado = false;
+    currentState = GAMEPLAY; // Vai direto pro jogo ao iniciar
 
-    // Reseta e cria SEUS blocos
-    if (*listaBlocos != NULL) destruirLista(*listaBlocos);
-    *listaBlocos = gerarBlocos(nivel); // <--- Sua função brilhando aqui
+    // Reseta Blocos (Integração com seu blocks.c)
+    if (*l != NULL) {
+        destruirLista(*l);
+    }
+    *l = gerarBlocos(nivel); 
 }
 
-void AtualizarLogica(Player *player, Ball *ball, Bloco **listaBlocos) {
-    if (jogoFinalizado) return;
-
-    // 1. Movimento da Raquete
-    if (IsKeyDown(KEY_LEFT) && player->rect.x > 0) 
-        player->rect.x -= player->velocidade;
-    if (IsKeyDown(KEY_RIGHT) && player->rect.x < LARGURA_TELA - player->rect.width) 
-        player->rect.x += player->velocidade;
-
-    // 2. Movimento da Bola
-    // Dificuldade progressiva: Aumenta velocidade com o nível
-    float multiplicador = 1.0f + (nivel * 0.1f);
-    ball->posicao.x += ball->velocidade.x * multiplicador;
-    ball->posicao.y += ball->velocidade.y * multiplicador;
-
-    // 3. Colisão Bola x Paredes
-    if (ball->posicao.x <= ball->raio || ball->posicao.x >= LARGURA_TELA - ball->raio)
-        ball->velocidade.x *= -1;
-    if (ball->posicao.y <= ball->raio)
-        ball->velocidade.y *= -1;
-
-    // 4. Colisão Bola x Raquete
-    if (CheckCollisionCircleRec(ball->posicao, ball->raio, player->rect)) {
-        ball->velocidade.y *= -1;
-        ball->posicao.y = player->rect.y - ball->raio - 1; // Desgruda
+void AtualizarLogica(Player *p, Ball *b, Bloco **l) {
+    
+    // Se estiver no menu ou game over, a lógica de jogo não roda
+    if (currentState != GAMEPLAY) {
+        // Lógica simples de transição (Enter para jogar)
+        if (currentState == MENU && IsKeyPressed(KEY_ENTER)) {
+            IniciarJogo(p, b, l);
+        }
+        if (currentState == GAME_OVER && IsKeyPressed(KEY_R)) {
+            currentState = MENU;
+        }
+        return;
     }
 
-    // 5. Colisão Bola x SEUS BLOCOS (Lista Encadeada)
-    Bloco *atual = *listaBlocos;
+    // --- 1. Movimento da Raquete ---
+    if (IsKeyDown(KEY_LEFT) && p->rect.x > 0) 
+        p->rect.x -= p->velocidade;
+    if (IsKeyDown(KEY_RIGHT) && p->rect.x < LARGURA_TELA - p->rect.width) 
+        p->rect.x += p->velocidade;
+
+    // --- 2. Movimento da Bola ---
+    // Velocidade aumenta levemente com o nível
+    float mult = 1.0f + (nivel * 0.1f);
+    b->posicao.x += b->velocidade.x * mult;
+    b->posicao.y += b->velocidade.y * mult;
+
+    // --- 3. Colisão com Paredes ---
+    if (b->posicao.x <= b->raio || b->posicao.x >= LARGURA_TELA - b->raio)
+        b->velocidade.x *= -1;
+    if (b->posicao.y <= b->raio)
+        b->velocidade.y *= -1;
+
+    // --- 4. Colisão com Raquete ---
+    if (CheckCollisionCircleRec(b->posicao, b->raio, p->rect)) {
+        b->velocidade.y *= -1;
+        b->posicao.y = p->rect.y - b->raio - 1; // Desgruda
+    }
+
+    // --- 5. Colisão com Blocos (SUA LISTA ENCADEADA) ---
+    Bloco *atual = *l;
     while (atual != NULL) {
         if (atual->ativo) {
-            if (CheckCollisionCircleRec(ball->posicao, ball->raio, atual->rect)) {
-                ball->velocidade.y *= -1; // Rebate
-                atual->vida--;            // Tira vida
+            if (CheckCollisionCircleRec(b->posicao, b->raio, atual->rect)) {
+                b->velocidade.y *= -1; // Rebate
+                atual->vida--;
                 
                 if (atual->vida <= 0) {
-                    atual->ativo = false; // Mata bloco
-                    pontuacao += 100;     // Ganha ponto
+                    atual->ativo = false;
+                    pontuacao += 100;
                 }
-                break; // Bateu em um, sai do loop (evita bugs físicos)
+                break; // Só bate em um bloco por vez
             }
         }
-        atual = atual->prox; // Vai para o próximo nó da lista
+        atual = atual->prox;
     }
 
-    // 6. Verificar Vitória de Nível
-    if (todosBlocosDestruidos(*listaBlocos)) {
+    // --- 6. Passar de Fase ---
+    if (todosBlocosDestruidos(*l)) {
         nivel++;
-        // Limpa a lista velha e cria a nova (Rounds Infinitos)
-        destruirLista(*listaBlocos);
-        *listaBlocos = gerarBlocos(nivel);
+        destruirLista(*l);
+        *l = gerarBlocos(nivel); // Carrega o próximo desenho (Alien, etc)
         
-        // Reseta a bola para o meio
-        ball->posicao = (Vector2){ LARGURA_TELA/2, ALTURA_TELA/2 };
-        ball->velocidade = (Vector2){ 4.0f, -4.0f }; // Reinicia direção
+        // Reseta bola
+        b->posicao = (Vector2){ LARGURA_TELA/2, ALTURA_TELA/2 };
+        b->velocidade = (Vector2){ 4.0f, -4.0f };
     }
 
-    // 7. Verificar Derrota (Game Over)
-    if (ball->posicao.y > ALTURA_TELA) {
-        player->vidas--;
-        if (player->vidas <= 0) {
-            jogoFinalizado = true;
-            // Aqui entraria o salvarRanking() no futuro
+    // --- 7. Game Over / Perder Vida ---
+    if (b->posicao.y > ALTURA_TELA) {
+        p->vidas--;
+        vidas = p->vidas; // Atualiza global
+        
+        if (p->vidas <= 0) {
+            currentState = GAME_OVER;
         } else {
-            // Perdeu vida, reseta bola
-            ball->posicao = (Vector2){ LARGURA_TELA/2, ALTURA_TELA/2 };
-            ball->velocidade = (Vector2){ 4.0f, -4.0f };
+            // Reseta bola
+            b->posicao = (Vector2){ LARGURA_TELA/2, ALTURA_TELA/2 };
+            b->velocidade = (Vector2){ 4.0f, -4.0f };
         }
     }
 }

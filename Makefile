@@ -5,7 +5,7 @@ PROJETO_NOME = jogo_final
 CC = gcc
 
 # Arquivos fonte .c (só temos o main.c por enquanto)
-FONTES = main.c blocks.c game_logic.c graphics.c
+FONTES = main.c blocks.c graphics.c game_logic.c
 # Flags de Compilação
 CFLAGS = -Wpedantic -Wall -I/usr/local/include -std=c99
 

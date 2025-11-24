@@ -3,9 +3,8 @@
 
 #include "raylib.h"
 #include <stdbool.h>
-#include "blocks.h" // <--- AQUI O SEGREDO: Incluímos o seu arquivo!
+#include "blocks.h"
 
-// --- Enumerações ---
 typedef enum {
     MENU = 0,
     GAMEPLAY,
@@ -13,10 +12,8 @@ typedef enum {
     GAME_OVER
 } GameScreen;
 
-// --- Estruturas (Bola e Player ficam aqui pois são da lógica) ---
-
 typedef struct {
-    Rectangle rect;   // Posição e tamanho da raquete
+    Rectangle rect;
     float velocidade;
     int vidas;
 } Player;
@@ -28,20 +25,19 @@ typedef struct {
     bool ativa;
 } Ball;
 
-// OBS: Não definimos "Bloco" aqui porque já veio do "blocks.h"
-
-// --- Variáveis Globais Compartilhadas ---
+// --- EXPORTANDO AS GLOBAIS (Para main.c e graphics.c verem) ---
+extern Player player;
+extern Ball ball;
+extern Bloco *listaBlocos; // IMPORTANTE
 extern int pontuacao;
 extern int nivel;
+extern int vidas;
+extern GameScreen currentState;
+extern int fakeRankings[5];
 extern bool jogoFinalizado;
 
-// --- Protótipos das Funções LÓGICAS (Sem desenho) ---
-
-// Inicializadores
-void IniciarJogo(Player *player, Ball *ball, Bloco **listaBlocos);
-
-// Atualizador (O Cérebro do Jogo)
-// Recebe ponteiros para poder modificar os valores
-void AtualizarLogica(Player *player, Ball *ball, Bloco **listaBlocos);
+// Funções
+void IniciarJogo(Player *p, Ball *b, Bloco **l);
+void AtualizarLogica(Player *p, Ball *b, Bloco **l);
 
 #endif

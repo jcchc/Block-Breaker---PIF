@@ -30,7 +30,6 @@ Bloco* criarDoMapa(Bloco *head, char *desenho[10], int level) {
 }
 
 Bloco* gerarBlocos(int level) {
-    level = 3;
     Bloco *head = NULL;
 
     if (level >= 2 && level <= 11) {
