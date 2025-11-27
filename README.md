@@ -91,6 +91,10 @@ gcc *.c -o jogo_final -lraylib -framework OpenGL -framework Cocoa -framework IOK
 * **Esc** — Fecha o jogo
 
 ### 1️⃣ Modos de Jogo
+
+**Mecânica de Aceleração Progressiva**
+* A velocidade vetorial da bola sofre incrementos calculados a cada nível (speed multiplier), aumentando o desafio gradativamente.
+  
 **Modo Normal**
 * 6 níveis progressivos
 * Cada nível possui um layout diferente de blocos
