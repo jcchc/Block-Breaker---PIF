@@ -77,13 +77,11 @@ make
 ./jogo_final
 ```
 Compilando no MacOS
->>>>>>> 51ac793be90819b61d18cea3e2c5693fd7c63dc2
 
 ```
 gcc *.c -o jogo_final -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 
 ./jogo_final
-
 ```
 ## 🕹️ Instruções do Jogo
 
@@ -93,6 +91,10 @@ gcc *.c -o jogo_final -lraylib -framework OpenGL -framework Cocoa -framework IOK
 * **Esc** — Fecha o jogo
 
 ### 1️⃣ Modos de Jogo
+
+**Mecânica de Aceleração Progressiva**
+* A velocidade vetorial da bola sofre incrementos calculados a cada nível (speed multiplier), aumentando o desafio gradativamente.
+  
 **Modo Normal**
 * 6 níveis progressivos
 * Cada nível possui um layout diferente de blocos
