@@ -10,7 +10,6 @@ Com diferentes mapas, dificuldade progressiva, ranking local e efeitos visuais, 
 * Julio Cesar Coutinho Holanda Cavalcanti - julioholanda.jh2007@gmail.com
 * João Luiz de Lima Bacelar - joaollbacelar@gmail.com
 
-
 ## ✅ Pré-requisitos
 
 Para rodar o jogo, você precisa ter instalado:
@@ -25,17 +24,21 @@ Para rodar o jogo, você precisa ter instalado:
 
 ### 🐧 Linux (Ubuntu/Debian)
 Execute no terminal:
-sudo apt update sudo apt install build-essential git libraylib-dev
-
+```bash
+sudo apt update
+sudo apt install build-essential git libraylib-dev
+```
 
 ### 🍎 macOS
 Instale o Homebrew (se ainda não tiver):
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
+```bash
+/bin/bash -c "$(curl -fsSL [https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh](https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh))"
+```
 
 Depois instale a Raylib:
+```bash
 brew install raylib
-
+```
 
 ### 🪟 Windows
 Recomendado: MinGW + vcpkg.
@@ -43,46 +46,42 @@ Recomendado: MinGW + vcpkg.
 1. Instale o vcpkg
 2. Configure a variável de ambiente `VCPKG_ROOT`
 3. Instale a Raylib:
+```bash
 vcpkg install raylib
-
+```
 
 Se o comando `make` não funcionar no terminal:
+```powershell
 Set-Alias -Name make -Value mingw32-make
-
+```
 
 ---
 
 ## ♟️ Como Rodar o Jogo
 
 Clone o repositório:
-git clone https://github.com/jcchc/Block-Breaker.git
-
+```bash
+git clone [https://github.com/jcchc/Block-Breaker.git](https://github.com/jcchc/Block-Breaker.git)
+```
 
 Entre na pasta do projeto:
+```bash
 cd Block-Breaker
+```
 
-
-<<<<<<< HEAD
 Compile e execute:
+```bash
 make run
-
+```
 
 Ou manualmente:
-make ./jogo_final
-
-=======
-Compilando no Linux:
-```
+```bash
 make
 ./jogo_final
 ```
-Compilando no MacOS
 
-```
-gcc *.c -o jogo_final -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
+---
 
-./jogo_final
-```
 ## 🕹️ Instruções do Jogo
 
 ### 🎮 Navegação no Menu
@@ -91,10 +90,6 @@ gcc *.c -o jogo_final -lraylib -framework OpenGL -framework Cocoa -framework IOK
 * **Esc** — Fecha o jogo
 
 ### 1️⃣ Modos de Jogo
-
-**Mecânica de Aceleração Progressiva**
-* A velocidade vetorial da bola sofre incrementos calculados a cada nível (speed multiplier), aumentando o desafio gradativamente.
-  
 **Modo Normal**
 * 6 níveis progressivos
 * Cada nível possui um layout diferente de blocos
@@ -103,7 +98,7 @@ gcc *.c -o jogo_final -lraylib -framework OpenGL -framework Cocoa -framework IOK
 **Modo Sobrevivência**
 * Dificuldade aumenta automaticamente
 * Objetivo: sobreviver o máximo possível
-* Inicado após término da 6 fases iniciais 
+* Iniciado após término das 6 fases iniciais
 
 **Rankings**
 * Guarda as maiores pontuações
@@ -121,3 +116,13 @@ gcc *.c -o jogo_final -lraylib -framework OpenGL -framework Cocoa -framework IOK
 * **Derrota:** a bola caiu
 * `M` — Volta ao menu
 * `R` — Reinicia o jogo
+
+---
+
+## 📹 Gameplay
+
+Confira o jogo em ação:
+
+[![Gameplay Block Breaker](https://img.youtube.com/vi/prRISFlnUHE/0.jpg)](https://www.youtube.com/watch?v=prRISFlnUHE)
+
+> Clique na imagem acima para assistir à demonstração.
