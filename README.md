@@ -78,8 +78,9 @@ Compilando no MacOS
 
 ```
 gcc *.c -o jogo_final -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
+
 ./jogo_final
----
+
 ```
 ## 🕹️ Instruções do Jogo
 
