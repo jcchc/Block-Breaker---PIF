@@ -55,11 +55,11 @@ Set-Alias -Name make -Value mingw32-make
 ## ♟️ Como Rodar o Jogo
 
 Clone o repositório:
-git clone https://github.com/jcchc/Block-Breaker--PIF.git
+git clone https://github.com/jcchc/Block-Breaker.git
 
 
 Entre na pasta do projeto:
-cd Block-Breaker--PIF
+cd Block-Breaker
 
 
 Compile e execute:
