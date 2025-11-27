@@ -4,6 +4,7 @@
 #include "blocks.h"     
 #include <stdio.h>      
 
+// --- CORES EXATAS DO SEU GRUPO ---
 const Color COR_FUNDO      = { 10, 10, 15, 255 };      
 const Color COR_BOTAO      = { 20, 20, 80, 200 };      
 const Color COR_BORDA      = { 0, 200, 255, 255 };     
@@ -18,6 +19,7 @@ const Color CORES_NIVEIS[] = {
     { 0, 121, 241, 255 }    
 };
 
+// --- AUDIO ---
 static Sound musicaMenu;
 static Sound musicaFase;
 static Sound somBloco;
@@ -25,6 +27,7 @@ static Sound somRebatida;
 static Sound somGameOver;
 static Sound somPerderVida;
 
+// --- ESTRUTURAS ---
 #define MAX_PARTICLES 100
 typedef struct {
     Vector2 pos;
@@ -41,6 +44,7 @@ static Particle particles[MAX_PARTICLES];
 typedef struct { Rectangle rect; Color color; float speed; } FallingBlock;
 static FallingBlock fallingBlocks[BLOCK_COUNT];
 
+// --- EXTERNS ---
 extern Player player;
 extern Ball ball;
 extern Bloco *listaBlocos;
@@ -51,6 +55,7 @@ extern GameScreen currentState;
 extern int topScores[5];
 extern float roundTimer;
 
+// --- FUNCOES AUXILIARES ---
 static void InitMenuBlocks(void) {
     for (int i = 0; i < BLOCK_COUNT; i++) {
         fallingBlocks[i].rect = (Rectangle){ GetRandomValue(0, 900), GetRandomValue(-600, 0), GetRandomValue(20, 50), GetRandomValue(20, 50) };
@@ -100,6 +105,7 @@ static void DrawArcadeButton(int y, const char* text, Color highlight) {
     DrawText(text, x + (btnWidth - textW)/2, y + 12, 25, highlight);
 }
 
+// --- TELAS ---
 static void DrawMenu(void) {
     ClearBackground(COR_FUNDO);
     UpdateMenuBlocks();
@@ -107,10 +113,12 @@ static void DrawMenu(void) {
         DrawRectangleRec(fallingBlocks[i].rect, fallingBlocks[i].color);
     }
     
+    // Titulo
     DrawTextCentered("BLOCK BREAKER", 80, 80, RED);   
     DrawTextCentered("BLOCK BREAKER", 75, 80, BLUE);  
     DrawTextCentered("BLOCK BREAKER", 70, 80, COR_TITULO); 
 
+    // Botoes
     DrawArcadeButton(300, "START GAME  [ENTER]", GOLD);
     DrawArcadeButton(370, "RANKING  [R]", GOLD);
     DrawArcadeButton(440, "EXIT  [ESC]", GOLD);
@@ -178,10 +186,11 @@ static void DrawGameOver(void) {
     DrawTextCentered("[M] MAIN MENU", 500, 25, GRAY);
 }
 
+// --- FUNCOES PUBLICAS ---
 void InitGraphics(void) {
     musicaMenu = LoadSound("SomMenu.wav");
     musicaFase = LoadSound("SomFase.wav");
-    somBloco   = LoadSound("SomBloco.wav");
+    somBloco = LoadSound("SomBloco.wav");
     somRebatida = LoadSound("SomRebatida.wav");
     somGameOver = LoadSound("SomGameOver.wav");
     somPerderVida = LoadSound("SomPerderVida.wav");
@@ -216,25 +225,38 @@ void SpawnExplosion(Vector2 pos, Color color) {
     }
 }
 
+// --- API DE SOM ---
 void TocarSomBloco(void) { PlaySound(somBloco); }
 void TocarSomRebatida(void) { PlaySound(somRebatida); }
 void TocarSomGameOver(void) { PlaySound(somGameOver); }
 void TocarSomPerderVida(void) { PlaySound(somPerderVida); }
 
 void DrawGameFrame(void) {
+    // --- GERENCIADOR DE MUSICA (Modo Sound Loop) ---
+    
+    // 1. Se estiver no Menu/Ranking:
     if (currentState == MENU || currentState == RANKINGS) {
+        // Se a musica do menu NAO estiver tocando, toca ela
         if (!IsSoundPlaying(musicaMenu)) PlaySound(musicaMenu);
+        
+        // Garante que a musica do jogo pare
         if (IsSoundPlaying(musicaFase)) StopSound(musicaFase);
     } 
+    // 2. Se estiver Jogando:
     else if (currentState == GAMEPLAY) {
+        // Se a musica da fase NAO estiver tocando, toca ela
         if (!IsSoundPlaying(musicaFase)) PlaySound(musicaFase);
+        
+        // Garante que a musica do menu pare
         if (IsSoundPlaying(musicaMenu)) StopSound(musicaMenu);
     }
+    // 3. Se for Game Over:
     else if (currentState == GAME_OVER) {
         StopSound(musicaFase);
         StopSound(musicaMenu);
     }
 
+    // --- DESENHA AS TELAS ---
     switch(currentState) {
         case MENU:      DrawMenu();     break;
         case GAMEPLAY:  DrawGameplay(); break;
