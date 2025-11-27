@@ -6,10 +6,10 @@ Com diferentes mapas, dificuldade progressiva, ranking local e efeitos visuais, 
 
 ## 👨‍💻 Membros da Equipe
 
-* Rodrigo
-* Julio
-* Joao
-* Luis
+* Rodrigo Vinhas Marques - rodrigovinhasmarques@gmail.com
+* Julio Cesar Coutinho Holanda Cavalcanti - julioholanda.jh2007@gmail.com
+* João Luiz de Lima Bacelar - joaollbacelar@gmail.com
+
 
 ## ✅ Pré-requisitos
 
@@ -81,13 +81,14 @@ make ./jogo_final
 
 ### 1️⃣ Modos de Jogo
 **Modo Normal**
-* 10 níveis progressivos
+* 6 níveis progressivos
 * Cada nível possui um layout diferente de blocos
 * Destrua todos os blocos para avançar
 
-**Modo Infinito (opcional)**
+**Modo Sobrevivência**
 * Dificuldade aumenta automaticamente
 * Objetivo: sobreviver o máximo possível
+* Inicado após término da 6 fases iniciais 
 
 **Rankings**
 * Guarda as maiores pontuações
@@ -101,7 +102,7 @@ make ./jogo_final
 * **Não deixe a bola cair!**
 
 ### 3️⃣ Game Over / Vitória
-* **Vitória:** destrua todos os blocos
+* **Vitória:** alcançar a maior pontuação possível
 * **Derrota:** a bola caiu
 * `M` — Volta ao menu
 * `R` — Reinicia o jogo
