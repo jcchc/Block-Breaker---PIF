@@ -4,7 +4,6 @@
 #include "raylib.h"
 #include <stdbool.h>
 
-// Definições que todo mundo usa
 typedef struct {
     Rectangle rect;
     float velocidade;
@@ -18,7 +17,6 @@ typedef struct {
     bool ativa;
 } Ball;
 
-// Estados do Jogo
 typedef enum { 
     MENU = 0, 
     GAMEPLAY, 

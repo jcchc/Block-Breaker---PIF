@@ -1,12 +1,9 @@
 #ifndef BLOCKS_H
 #define BLOCKS_H
 
-// 1. INCLUSÕES DAS QUAIS O MOLDE DEPENDE
-#include <raylib.h>  // Porque precisamos de 'Rectangle'
-#include <stdbool.h> // Porque precisamos de 'bool'
+#include <raylib.h>
+#include <stdbool.h>
 
-// 2. A DEFINIÇÃO DA STRUCT (O "MOLDE" EM SI)
-//    ISTO É O QUE ESTAVA A FALTAR!
 typedef struct Bloco {
     Rectangle rect;
     int vida;
@@ -15,7 +12,6 @@ typedef struct Bloco {
     struct Bloco *prox;
 } Bloco;
 
-// 3. AS "PROMESSAS" (O "CARDÁPIO")
 Bloco* gerarBlocos(int level);
 void destruirLista(Bloco *head);
 bool todosBlocosDestruidos(Bloco *head);

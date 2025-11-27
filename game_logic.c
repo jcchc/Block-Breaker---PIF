@@ -1,5 +1,5 @@
 #include "game_logic.h"
-#include "graphics.h" // Mantivemos isso para o SOM funcionar
+#include "graphics.h"
 #include <stdlib.h>
 #include <stdio.h> 
 
@@ -12,17 +12,14 @@ int nivel = 1;
 int vidas = 3;
 GameScreen currentState = MENU;
 
-// Ranking Real (Top 5)
 int topScores[5] = {0, 0, 0, 0, 0}; 
 
-// Timers de controle
 float roundTimer = 0.0f;
 float respawnTimer = 0.0f;
 
 const int LARGURA_TELA = 900;
 const int ALTURA_TELA = 650;
 
-// --- FUNÇÕES DE ARQUIVO (Ranking) ---
 void CarregarRanking() {
     FILE *arquivo = fopen("ranking.txt", "r");
     if (arquivo != NULL) {
@@ -56,17 +53,13 @@ void SalvarRanking(int novaPontuacao) {
     }
 }
 
-// --- FUNÇÃO DE RESET ---
 void IniciarJogo(Player *p, Ball *b, Bloco **l) {
     p->rect = (Rectangle){ LARGURA_TELA/2 - 50, ALTURA_TELA - 40, 100, 20 };
     p->velocidade = 7.0f;
     p->vidas = 3;
 
     b->posicao = (Vector2){ LARGURA_TELA/2, ALTURA_TELA/2 };
-    
-    // --- VELOCIDADE ORIGINAL RESTAURADA (3.2) ---
     b->velocidade = (Vector2){ 3.2f, -3.2f }; 
-    
     b->raio = 8.0f;
     b->ativa = true;
 
@@ -85,9 +78,6 @@ void IniciarJogo(Player *p, Ball *b, Bloco **l) {
 
 void AtualizarLogica(Player *p, Ball *b, Bloco **l) {
     
-    // --- MÁQUINA DE ESTADOS ---
-
-    // 1. MENU
     if (currentState == MENU) {
         if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) {
             IniciarJogo(p, b, l);
@@ -100,7 +90,6 @@ void AtualizarLogica(Player *p, Ball *b, Bloco **l) {
         return;
     }
 
-    // 2. RANKING
     if (currentState == RANKINGS) {
         if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_B)) {
             currentState = MENU;
@@ -108,7 +97,6 @@ void AtualizarLogica(Player *p, Ball *b, Bloco **l) {
         return;
     }
 
-    // 3. GAME OVER
     if (currentState == GAME_OVER) {
         if (IsKeyPressed(KEY_R)) {
              IniciarJogo(p, b, l);
@@ -120,7 +108,6 @@ void AtualizarLogica(Player *p, Ball *b, Bloco **l) {
         return;
     }
   
-    // --- TIMERS ---
     if (roundTimer > 0) {
         roundTimer -= GetFrameTime();
         return;
@@ -130,8 +117,6 @@ void AtualizarLogica(Player *p, Ball *b, Bloco **l) {
         respawnTimer -= GetFrameTime();
     }
 
-    // --- JOGABILIDADE ---
-
     if (IsKeyDown(KEY_LEFT)) p->rect.x -= p->velocidade;
     if (IsKeyDown(KEY_RIGHT)) p->rect.x += p->velocidade;
     if (p->rect.x < 0) p->rect.x = 0;
@@ -139,9 +124,7 @@ void AtualizarLogica(Player *p, Ball *b, Bloco **l) {
 
     float mult = 1.0f + (nivel * 0.1f);
 
-    // --- MOVIMENTO ORIGINAL (Com o ajuste do else para não travar) ---
     if (respawnTimer > 0) {
-        // Usa o 0.35f original que você pediu
         b->posicao.x += b->velocidade.x * mult * 0.35f;
         b->posicao.y += b->velocidade.y * mult * 0.35f;
     } else {
@@ -149,23 +132,20 @@ void AtualizarLogica(Player *p, Ball *b, Bloco **l) {
         b->posicao.y += b->velocidade.y * mult;
     }
 
-    // Paredes
     if (b->posicao.x <= b->raio || b->posicao.x >= LARGURA_TELA - b->raio) b->velocidade.x *= -1;
     if (b->posicao.y <= b->raio) b->velocidade.y *= -1;
 
-    // Colisão Player
     if (CheckCollisionCircleRec(b->posicao, b->raio, p->rect)) {
-        TocarSomRebatida(); // Som mantido
+        TocarSomRebatida();
         b->velocidade.y *= -1;
         b->posicao.y = p->rect.y - b->raio - 1;
     }
 
-    // Colisão Blocos
     Bloco *atual = *l;
     while (atual != NULL) {
         if (atual->ativo) {
             if (CheckCollisionCircleRec(b->posicao, b->raio, atual->rect)) {
-                TocarSomBloco(); // Som mantido
+                TocarSomBloco();
                 b->velocidade.y *= -1;
                 atual->vida--;
                 if (atual->vida <= 0) {
@@ -178,36 +158,30 @@ void AtualizarLogica(Player *p, Ball *b, Bloco **l) {
         atual = atual->prox;
     }
 
-    // Passar de Nível
     if (todosBlocosDestruidos(*l)) {
         nivel++;
         destruirLista(*l);
         *l = gerarBlocos(nivel);
 
         b->posicao = (Vector2){ LARGURA_TELA/2, ALTURA_TELA/2 };
-        
-        // --- VELOCIDADE ORIGINAL (3.2) ---
         b->velocidade = (Vector2){ 3.2f, -3.2f };
 
         roundTimer = 3.0f;
         respawnTimer = 1.5f;
     }
 
-    // Morreu
     if (b->posicao.y > ALTURA_TELA) {
         p->vidas--;
         vidas = p->vidas;
 
         if (p->vidas <= 0) {
-            TocarSomGameOver(); // Som mantido
+            TocarSomGameOver();
             SalvarRanking(pontuacao); 
             currentState = GAME_OVER;
         } else {
-            TocarSomPerderVida(); // Som mantido
+            TocarSomPerderVida();
             
             b->posicao = (Vector2){ LARGURA_TELA/2, ALTURA_TELA/2 };
-            
-            // --- VELOCIDADE ORIGINAL (3.2) ---
             b->velocidade = (Vector2){ 3.2f, -3.2f };
             
             respawnTimer = 1.5f;

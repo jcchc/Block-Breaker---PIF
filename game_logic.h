@@ -2,13 +2,9 @@
 #define GAME_LOGIC_H
 
 #include "raylib.h"
-#include "game_def.h" // Importa as definições de Player, Ball, etc.
-#include "blocks.h"   // Importa a definição de Bloco
+#include "game_def.h"
+#include "blocks.h"
 #include <stdbool.h>
-
-// --- VARIÁVEIS GLOBAIS COMPARTILHADAS (EXTERN) ---
-// O 'extern' avisa ao compilador que essas variáveis 
-// estão definidas no game_logic.c, mas podem ser usadas aqui.
 
 extern Player player;
 extern Ball ball;
@@ -18,16 +14,12 @@ extern int pontuacao;
 extern int nivel;
 extern int vidas;
 
-extern GameScreen currentState; // Estado atual do jogo
+extern GameScreen currentState;
 
-// Ranking Real (Lido do arquivo)
-extern int topScores[5]; 
+extern int topScores[5];
 
-// Timers para controle de fluxo
-extern float roundTimer; 
+extern float roundTimer;
 
-// --- PROTÓTIPOS DE FUNÇÕES ---
-// Funções principais da lógica do jogo
 void IniciarJogo(Player *p, Ball *b, Bloco **l);
 void AtualizarLogica(Player *p, Ball *b, Bloco **l);
 
