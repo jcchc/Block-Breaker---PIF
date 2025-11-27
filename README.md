@@ -69,17 +69,16 @@ Entre na pasta do projeto:
 cd Block-Breaker
 ```
 
-Compile e execute:
-```bash
-make run
+Compilando no Linux:
 ```
-
-Ou manualmente:
-```bash
 make
 ./jogo_final
 ```
+Compilando no MacOS
 
+```
+gcc *.c -o jogo_final -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
+./jogo_final
 ---
 
 ## 🕹️ Instruções do Jogo
