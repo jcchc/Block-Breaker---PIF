@@ -10,6 +10,7 @@ Com diferentes mapas, dificuldade progressiva, ranking local e efeitos visuais, 
 * Julio Cesar Coutinho Holanda Cavalcanti - julioholanda.jh2007@gmail.com
 * João Luiz de Lima Bacelar - joaollbacelar@gmail.com
 
+
 ## ✅ Pré-requisitos
 
 Para rodar o jogo, você precisa ter instalado:
@@ -24,21 +25,17 @@ Para rodar o jogo, você precisa ter instalado:
 
 ### 🐧 Linux (Ubuntu/Debian)
 Execute no terminal:
-```bash
-sudo apt update
-sudo apt install build-essential git libraylib-dev
-```
+sudo apt update sudo apt install build-essential git libraylib-dev
+
 
 ### 🍎 macOS
 Instale o Homebrew (se ainda não tiver):
-```bash
-/bin/bash -c "$(curl -fsSL [https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh](https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh))"
-```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
 
 Depois instale a Raylib:
-```bash
 brew install raylib
-```
+
 
 ### 🪟 Windows
 Recomendado: MinGW + vcpkg.
@@ -46,39 +43,32 @@ Recomendado: MinGW + vcpkg.
 1. Instale o vcpkg
 2. Configure a variável de ambiente `VCPKG_ROOT`
 3. Instale a Raylib:
-```bash
 vcpkg install raylib
-```
+
 
 Se o comando `make` não funcionar no terminal:
-```powershell
 Set-Alias -Name make -Value mingw32-make
-```
+
 
 ---
 
 ## ♟️ Como Rodar o Jogo
 
 Clone o repositório:
-```bash
-git clone [https://github.com/jcchc/Block-Breaker.git](https://github.com/jcchc/Block-Breaker.git)
-```
+git clone https://github.com/jcchc/Block-Breaker.git
+
 
 Entre na pasta do projeto:
-```bash
 cd Block-Breaker
-```
+
 
 Compile e execute:
-```bash
 make run
-```
+
 
 Ou manualmente:
-```bash
-make
-./jogo_final
-```
+make ./jogo_final
+
 
 ---
 
@@ -98,7 +88,7 @@ make
 **Modo Sobrevivência**
 * Dificuldade aumenta automaticamente
 * Objetivo: sobreviver o máximo possível
-* Iniciado após término das 6 fases iniciais
+* Inicado após término da 6 fases iniciais 
 
 **Rankings**
 * Guarda as maiores pontuações
